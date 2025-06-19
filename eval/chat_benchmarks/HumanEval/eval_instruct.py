@@ -22,7 +22,8 @@ class HumanEvalBenchmark(BaseBenchmark):
         self,
         languages: List[str] = ["python", "sh"],
         data_dir: str = "eval/chat_benchmarks/HumanEval/data",
-        max_tokens: int = 1024,
+        # max_tokens: int = 1024,
+        max_tokens: int = 32768,
         num_workers: int = 8,
         timeout: float = 3.0,
         debug: bool = False,
@@ -104,8 +105,11 @@ Please continue to complete the function. You are not allowed to modify the give
                             (
                                 inputs,
                                 {
+                                    "temperature": 0.6,
+                                    "top_p": 0.95,
+                                    "top_k": 20,
                                     "max_new_tokens": self.max_tokens,
-                                    "do_sample": False,
+                                    "do_sample": True,
                                 },
                             ),
                             idx,

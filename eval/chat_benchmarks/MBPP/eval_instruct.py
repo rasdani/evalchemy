@@ -26,7 +26,9 @@ class MBPPBenchmark(BaseBenchmark):
         start_idx: int = 10,
         end_idx: int = 510,
         debug: bool = False,
-        max_tokens: int = 512,
+        # max_tokens: int = 512,
+        max_tokens: int = 32768,
+        log_samples: bool = False,
         logger: Optional[logging.Logger] = None,
         system_instruction: Optional[str] = None,
     ):
@@ -40,6 +42,7 @@ class MBPPBenchmark(BaseBenchmark):
             start_idx: Start index for evaluation examples
             end_idx: End index for evaluation examples
             debug: If set, only evaluate on 2 examples
+            log_samples: If True, include sample data in evaluation results
             logger: Optional logger instance
             system_instruction: Optional system instruction for the model
         """
@@ -50,6 +53,7 @@ class MBPPBenchmark(BaseBenchmark):
         self.start_idx = start_idx
         self.end_idx = end_idx
         self.debug = debug
+        self.log_samples = log_samples
 
     def format_test_example(self, question: str, tests: List[str], code: Optional[str] = None) -> str:
         """Format a single test example."""
@@ -111,10 +115,11 @@ Here is my problem:
     def extract_code(self, completion: str) -> str:
         """Extract code block from model completion."""
         try:
-            code_block = re.findall(r"```python\n(.*?)```", completion, re.DOTALL | re.IGNORECASE)[0]
+            code_block = re.findall(r"```python\n(.*?)```", completion, re.DOTALL | re.IGNORECASE)[-1]
             return code_block
         except Exception as e:
             self.logger.warning(f"Failed to extract code block, using full completion.\nError: {str(e)}")
+            print(completion)
             return completion
 
     def generate_responses(self, model: LM) -> Dict[str, Any]:
@@ -148,8 +153,11 @@ Here is my problem:
                             (
                                 inputs,
                                 {
+                                    "temperature": 0.6,
+                                    "top_p": 0.95,
+                                    "top_k": 20,
                                     "max_new_tokens": self.max_tokens,
-                                    "do_sample": False,
+                                    "do_sample": True,
                                 },
                             ),
                             idx,
@@ -184,11 +192,17 @@ Here is my problem:
 
             self.logger.info(f"Saved {len(generated_examples)} examples to {output_path}")
 
-            return {
+            result = {
                 "temp_dir_obj": temp_dir_obj,
                 "num_examples": len(generated_examples),
                 "total_examples": len(examples),
             }
+            
+            # Add sample data if log_samples is enabled
+            if self.log_samples:
+                result["samples"] = generated_examples
+                
+            return result
 
         except Exception as e:
             self.logger.error(f"Error in generate_responses: {str(e)}")
@@ -226,6 +240,10 @@ Here is my problem:
                     "completion_rate": results["num_examples"] / results["total_examples"],
                 }
             )
+
+            # Add sample data if log_samples is enabled and samples exist
+            if self.log_samples and "samples" in results:
+                result["samples"] = results["samples"]
 
             temp_dir_obj.cleanup()
             return result

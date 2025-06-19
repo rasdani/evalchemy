@@ -56,7 +56,7 @@ def extract_generation_code(example: str, lang_code: str, verbose: bool = False)
     indent = setting["indent"]
 
     try:
-        code_block: str = re.findall(f"```{lang.lower()}\n(.*?)```", output, re.DOTALL | re.IGNORECASE)[0]
+        code_block: str = re.findall(f"```{lang.lower()}\n(.*?)```", output, re.DOTALL | re.IGNORECASE)[-1]
         if verbose:
             print(">>> Task: {}\n{}".format(task_id, code_block))
 

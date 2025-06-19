@@ -25,7 +25,8 @@ class MBPPPlusBenchmark(BaseBenchmark):
         num_workers: int = 8,
         timeout: float = 3.0,
         debug: bool = False,
-        max_tokens: int = 1024,
+        # max_tokens: int = 1024,
+        max_tokens: int = 32768,
         logger: Optional[logging.Logger] = None,
         system_instruction: Optional[str] = None,
     ):
@@ -111,7 +112,7 @@ Here is my problem:
     def extract_code(self, completion: str) -> str:
         """Extract code block from model completion."""
         try:
-            code_block = re.findall(r"```python\n(.*?)```", completion, re.DOTALL | re.IGNORECASE)[0]
+            code_block = re.findall(r"```python\n(.*?)```", completion, re.DOTALL | re.IGNORECASE)[-1]
             return code_block
         except Exception as e:
             self.logger.warning(f"Failed to extract code block, using full completion.\nError: {str(e)}")
@@ -149,7 +150,10 @@ Here is my problem:
                                 inputs,
                                 {
                                     "max_new_tokens": self.max_tokens,
-                                    "do_sample": False,
+                                    "do_sample": True,
+                                    "temperature": 0.6,
+                                    "top_p": 0.95,
+                                    "top_k": 20,
                                 },
                             ),
                             idx,

@@ -1,5 +1,6 @@
 import json
 import logging
+import re
 import tempfile
 
 from swebench.harness.run_evaluation import main as run_evaluation
@@ -14,6 +15,38 @@ from eval.task import BaseBenchmark
 from lm_eval.api.instance import Instance
 from lm_eval.api.model import LM
 from typing import Any, Dict, Optional
+
+# Monkey patch the extract_diff function in the imported library
+from swebench.inference.make_datasets import utils as swebench_utils
+
+def extract_diff(response):
+    """
+    Extracts the diff from a response formatted in different ways
+    """
+    if response is None:
+        return None
+    diff_matches = []
+    other_matches = []
+    pattern = re.compile(r"\<([\w-]+)\>(.*?)\<\/\1\>", re.DOTALL)
+    for code, match in pattern.findall(response):
+        if code in {"diff", "patch"}:
+            diff_matches.append(match)
+        else:
+            other_matches.append(match)
+    pattern = re.compile(r"```(\w+)?\n(.*?)```", re.DOTALL)
+    for code, match in pattern.findall(response):
+        if code in {"diff", "patch"}:
+            diff_matches.append(match)
+        else:
+            other_matches.append(match)
+    if diff_matches:
+        return diff_matches[-1] # return last instead
+    if other_matches:
+        return other_matches[-1] # return last instead
+    return response.split("</s>")[0]
+
+# Replace the function in the imported module
+swebench_utils.extract_diff = extract_diff
 
 PREDS_PATH = "temp_swebench_preds.json"
 
@@ -75,9 +108,13 @@ class SWEBenchBenchmark(BaseBenchmark):
                         inputs,
                         {
                             "max_new_tokens": self.max_tokens,
-                            "temperature": 0.2,
+                            # "temperature": 0.2,
+                            # "top_p": 0.95,
+                            # "do_sample": False,
+                            "temperature": 0.6,
                             "top_p": 0.95,
-                            "do_sample": False,
+                            "top_k": 20,
+                            "do_sample": True,
                         },
                     ),
                     idx,
