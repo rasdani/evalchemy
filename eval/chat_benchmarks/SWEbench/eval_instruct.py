@@ -16,8 +16,6 @@ from lm_eval.api.instance import Instance
 from lm_eval.api.model import LM
 from typing import Any, Dict, Optional
 
-# Monkey patch the extract_diff function in the imported library
-from swebench.inference.make_datasets import utils as swebench_utils
 
 def extract_diff(response):
     """
@@ -40,13 +38,14 @@ def extract_diff(response):
         else:
             other_matches.append(match)
     if diff_matches:
-        return diff_matches[-1] # return last instead
+        ret = diff_matches[-1].strip() + "\n" # return last instead
+        return ret
     if other_matches:
-        return other_matches[-1] # return last instead
-    return response.split("</s>")[0]
+        ret = other_matches[-1].strip() + "\n" # return last instead
+        return ret
+    ret = response.split("</s>")[0].strip() + "\n"
+    return ret
 
-# Replace the function in the imported module
-swebench_utils.extract_diff = extract_diff
 
 PREDS_PATH = "temp_swebench_preds.json"
 
@@ -129,7 +128,7 @@ class SWEBenchBenchmark(BaseBenchmark):
             results[instance["instance_id"]] = {
                 KEY_INSTANCE_ID: instance["instance_id"],
                 KEY_MODEL: model.model_identifier,
-                KEY_PREDICTION: output,
+                KEY_PREDICTION: extract_diff(output),
             }
 
         output_file = f"{self.dataset_name.split('/')[-1]}.json"
