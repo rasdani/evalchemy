@@ -134,6 +134,12 @@ Please continue to complete the function. You are not allowed to modify the give
                     for ex in generated_examples:
                         fw.write(json.dumps(ex) + "\n")
 
+                save_dir = f"logs/outputs/HumanEvalPlus"
+                save_path = f"{save_dir}/{model.model_identifier}.json"
+                os.makedirs(save_dir, exist_ok=True)
+                with open(save_path, "w") as f:
+                    json.dump(results, f, indent=2)
+
                 self.logger.info(f"Generated and saved {len(generated_examples)} examples for {lang}")
 
             except Exception as e:

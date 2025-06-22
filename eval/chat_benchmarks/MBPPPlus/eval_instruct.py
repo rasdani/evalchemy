@@ -186,6 +186,12 @@ Here is my problem:
                 for ex in generated_examples:
                     fw.write(json.dumps(ex) + "\n")
 
+            save_dir = f"logs/outputs/MBPPPlus"
+            save_path = f"{save_dir}/{model.model_identifier}.json"
+            os.makedirs(save_dir, exist_ok=True)
+            with open(save_path, "w") as f:
+                json.dump(generated_examples, f, indent=2)
+
             self.logger.info(f"Saved {len(generated_examples)} examples to {output_path}")
 
             return {
