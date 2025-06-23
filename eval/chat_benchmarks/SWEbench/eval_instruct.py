@@ -62,7 +62,8 @@ class SWEBenchBenchmark(BaseBenchmark):
         dataset_name: str = "rasdani/SWE-bench_Lite_oracle_32k",
         debug: bool = False,
         logger: Optional[logging.Logger] = None,
-        max_tokens: int = 8192,
+        # max_tokens: int = 8192,
+        max_tokens: int = 32768,
         system_instruction: Optional[str] = None,
     ):
         super().__init__(logger=logger, system_instruction=system_instruction)
