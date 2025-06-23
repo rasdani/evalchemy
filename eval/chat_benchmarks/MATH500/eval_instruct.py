@@ -1,6 +1,7 @@
 import json
 import logging
 from typing import Any, Dict, List, Optional
+import os
 
 import lm_eval.models
 from lm_eval.api.instance import Instance
@@ -82,9 +83,13 @@ class MATH500Benchmark(BaseBenchmark):
                     (
                         templated_messages,
                         {
-                            "do_sample": False,
+                            # "do_sample": False,
+                            "do_sample": True,
                             "max_new_tokens": self.max_new_tokens,
-                            "temperature": 0.7,
+                            # "temperature": 0.7,
+                            "temperature": 0.6,
+                            "top_p": 0.95,
+                            "top_k": 20,
                             "seed": self.seed,
                         },
                     ),
@@ -103,6 +108,12 @@ class MATH500Benchmark(BaseBenchmark):
         for example, output in zip(examples, outputs):
             example["model_output"] = output
             example["model_answer"] = self.extract_answer(output)
+
+        save_dir = f"logs/outputs/MATH500"
+        save_path = f"{save_dir}/{model.model_identifier}.json"
+        os.makedirs(save_dir, exist_ok=True)
+        with open(save_path, "w") as f:
+            json.dump(examples, f, indent=2)
 
         return {"examples": examples}
 
@@ -131,6 +142,7 @@ class MATH500Benchmark(BaseBenchmark):
         """Load MATH500 questions from the data file."""
         with open(self.data_file, "r") as f:
             questions = [json.loads(x) for x in f]
+        # questions = questions[:2]
         self.logger.info(f"Loaded {len(questions)} questions from {self.data_file}")
         return questions
 

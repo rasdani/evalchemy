@@ -132,7 +132,8 @@ class CruxEvalBenchmark(BaseBenchmark):
     def __init__(
         self,
         data_dir: str = CruxEval_PATH,
-        max_tokens: int = 2048,
+        # max_tokens: int = 2048,
+        max_tokens: int = 32768,
         num_workers: int = 32,
         timeout: float = 120,
         debug: bool = False,
@@ -216,7 +217,10 @@ class CruxEvalBenchmark(BaseBenchmark):
                                 {
                                     "max_new_tokens": self.max_tokens,
                                     "do_sample": True,
-                                    "temperature": 0.2,
+                                    # "temperature": 0.2,
+                                    "temperature": 0.6,
+                                    "top_p": 0.95,
+                                    "top_k": 20,
                                 },
                             ),
                             example["id"],
@@ -233,6 +237,7 @@ class CruxEvalBenchmark(BaseBenchmark):
                 for example, output in zip(examples, outputs):
                     example_with_output = example.copy()
 
+                    example_with_output["raw_generation"] = output
                     example_with_output["generation"] = extract_answer(output)
                     example_with_output["task_id"] = example_with_output.pop("id")
 
@@ -242,6 +247,13 @@ class CruxEvalBenchmark(BaseBenchmark):
                 temp_file_path = os.path.join(temp_dir, f"generated_{task}.jsonl")
 
                 with open(temp_file_path, "w", encoding="utf-8") as fw:
+                    for ex in generated_examples:
+                        fw.write(json.dumps(ex) + "\n")
+                    
+                save_dir = f"logs/outputs/CruxEval-{task}"
+                save_path = f"{save_dir}/{model.model_identifier}.json"
+                os.makedirs(save_dir, exist_ok=True)
+                with open(save_path, "w", encoding="utf-8") as fw:
                     for ex in generated_examples:
                         fw.write(json.dumps(ex) + "\n")
 
