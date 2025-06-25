@@ -2,6 +2,7 @@ import json
 import logging
 import re
 import tempfile
+import os
 
 from swebench.harness.run_evaluation import main as run_evaluation
 from swebench.harness.constants import (
@@ -59,7 +60,7 @@ class SWEBenchBenchmark(BaseBenchmark):
     def __init__(
         self,
         # dataset_name: str = "princeton-nlp/SWE-bench_Lite",
-        dataset_name: str = "rasdani/SWE-bench_Lite_oracle_32k",
+        dataset_name: str = "rasdani/SWE-bench_Lite_oracle_easy",
         debug: bool = False,
         logger: Optional[logging.Logger] = None,
         # max_tokens: int = 8192,
@@ -130,11 +131,18 @@ class SWEBenchBenchmark(BaseBenchmark):
                 KEY_INSTANCE_ID: instance["instance_id"],
                 KEY_MODEL: model.model_identifier,
                 KEY_PREDICTION: extract_diff(output),
+                "raw_output": output,
             }
 
         output_file = f"{self.dataset_name.split('/')[-1]}.json"
         output_path = f"{temp_dir}/{output_file}"
         with open(output_path, "w") as f:
+            json.dump(results, f, indent=2)
+
+        save_dir = f"logs/outputs/SWEbench"
+        save_path = f"{save_dir}/{model.model_identifier}.json"
+        os.makedirs(save_dir, exist_ok=True)
+        with open(save_path, "w") as f:
             json.dump(results, f, indent=2)
 
         return {"temp_dir_obj": temp_dir_obj, "predictions_path": output_path}
